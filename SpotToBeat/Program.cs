@@ -12,7 +12,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 // TODO: Clean up entire code
-
 namespace SpotToBeat
 {
     internal class Program
@@ -99,7 +98,6 @@ namespace SpotToBeat
             await host.RunAsync();
         }
 
-
         private static async Task OnAuthorizationCodeReceived(object sender, AuthorizationCodeResponse response)
         {
             await _server.Stop();
@@ -172,55 +170,52 @@ namespace SpotToBeat
 
             Page searchResults = await beatSaver.SearchBeatmaps(searchTextFilterOption);
 
-            if (searchResults != null)
-            {
-                // console clear hack
-                Console.Clear();
-                // ??? i love stackoverflow
-                Console.WriteLine("\x1b[3J");
-                Console.Clear();
-                Console.WriteLine($"Search Results for {track.Name}" + "\n");
-
-                // display search results 
-                for (int i = 0; i < searchResults.Beatmaps.Count; i++)
-                {
-                    // TODO: make this look better 
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"{i + 1} {TerminalURL(searchResults.Beatmaps[i].Name, $"https://beatsaver.com/maps/{searchResults.Beatmaps[i].ID}")} - {searchResults.Beatmaps[i].Uploader.Name} - {searchResults.Beatmaps[i].Uploaded.ToShortDateString()} - {searchResults.Beatmaps[i].Stats.Score}");
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine(searchResults.Beatmaps[i].Description);
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("--------------------------------------------------");
-                    Console.ResetColor();
-                }
-
-                Console.WriteLine("Please select which beatmap to download: (0 for none)");
-                int selection2 = int.Parse(Console.ReadLine()) - 1;
-
-                // try to download map selected
-                if (selection2 >= 0 && selection2 < searchResults.Beatmaps.Count)
-                {
-                    Console.WriteLine("Downloading " + searchResults.Beatmaps[selection2].Name);
-                    byte[] zip = await searchResults.Beatmaps[selection2].LatestVersion.DownloadZIP();
-                    try
-                    {
-                        File.WriteAllBytes($"{downloadDir}/{searchResults.Beatmaps[selection2].Name}.zip", zip);
-                        return "Downloaded " + searchResults.Beatmaps[selection2].Name;
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Error downloading " + searchResults.Beatmaps[selection2].Name);
-                        return e.Message;
-                    }
-                }
-                else
-                {
-                    return "Skipping Download";
-                }
-            }
-            else
+            if (searchResults == null)
             {
                 return $"No results found for {track.Name}";
+            }
+
+            // console clear hack
+            Console.Clear();
+            Console.WriteLine("\x1b[3J"); // ??? i love stackoverflow
+            Console.Clear();
+
+            Console.WriteLine($"Search Results for {track.Name}" + "\n");
+
+            // display search results 
+            for (int i = 0; i < searchResults.Beatmaps.Count; i++)
+            {
+                // TODO: make this look better 
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"{i + 1} {TerminalURL(searchResults.Beatmaps[i].Name, $"https://beatsaver.com/maps/{searchResults.Beatmaps[i].ID}")} - {searchResults.Beatmaps[i].Uploader.Name} - {searchResults.Beatmaps[i].Uploaded.ToShortDateString()} - {searchResults.Beatmaps[i].Stats.Score}");
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine(searchResults.Beatmaps[i].Description);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("--------------------------------------------------");
+                Console.ResetColor();
+            }
+
+            Console.WriteLine("Please select which beatmap to download: (0 for none)");
+            int selection2 = int.Parse(Console.ReadLine()) - 1;
+
+            // try to download map selected
+            if (!(selection2 >= 0 && selection2 < searchResults.Beatmaps.Count))
+            {
+                return "Skipping Download";
+            }
+
+            Console.WriteLine("Downloading " + searchResults.Beatmaps[selection2].Name);
+            byte[] zip = await searchResults.Beatmaps[selection2].LatestVersion.DownloadZIP();
+
+            try
+            {
+                File.WriteAllBytes($"{downloadDir}/{searchResults.Beatmaps[selection2].Name}.zip", zip);
+                return "Downloaded " + searchResults.Beatmaps[selection2].Name;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error downloading " + searchResults.Beatmaps[selection2].Name);
+                return e.Message;
             }
         }
 
